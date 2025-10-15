@@ -5,20 +5,23 @@ import { connectSocket, getSocket, disconnectSocket } from "../../lib/socket";
 import { addMessage, clearUnread, fetchChatHistoryThunk, markMessagesAsReadThunk, moveUserToTop, sendMessageThunk, setOnlineUsers, setUnreadCounts } from "@/store/slices/messageSlice";
 import ChatSidebar from "./ChatSidebar";
 import Image from "next/image";
+import { toast } from "react-toastify";
+import { blockUserThunk } from "@/store/slices/authSlice";
 
 const ChatMessages = () => {
   const dispatch = useAppDispatch();
   const hostName = process.env.NEXT_PUBLIC_IMAGE_URL!
-  const { profile } = useAppSelector((state) => state.auth);
-  const { selectedUser, messages, onlineUsers, users } = useAppSelector((state) => state.messages);
+  const { profile, user } = useAppSelector((state) => state.auth);
+  const { selectedUser, messages, onlineUsers } = useAppSelector((state) => state.messages);
   console.log(messages, "messagesssss");
 
   const [message, setMessage] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-
+  const [menuOpenId, setMenuOpenId] = useState<boolean>(false);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -45,7 +48,7 @@ const ChatMessages = () => {
         dispatch(addMessage(msg));
       }
       dispatch(moveUserToTop(senderId === currentUserId ? receiverId : senderId));
-      
+
       if (senderId === currentUserId) return;
 
       if (selectedUser && senderId === selectedUser._id) {
@@ -114,13 +117,13 @@ const ChatMessages = () => {
       // attachment: attachment ? URL.createObjectURL(attachment) : null,
       // attachmentType: attachment?.type || null,
       // attachmentName: attachment?.name || null,
-        attachment: attachment
-    ? { url: URL.createObjectURL(attachment), type: attachment.type, name: attachment.name }
-    : null,
+      attachment: attachment
+        ? { url: URL.createObjectURL(attachment), type: attachment.type, name: attachment.name }
+        : null,
       created_date: createdDate,
       created_time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }),
       date_time_label: dateLabel,
-      is_read: true,
+      is_read: false,
     };
     console.log(senderMsg, "senderMsg");
 
@@ -170,6 +173,27 @@ const ChatMessages = () => {
   }, [messages]);
   console.log(attachment, "attachmentttttt");
 
+  const handleBlock = async (userId: any) => {
+    console.log(userId, "userId");
+
+    try {
+      const result = await dispatch(blockUserThunk(userId));
+      if (result?.payload?.message === "User blocked successfully") {
+        toast.success(result?.payload?.message);
+        setIsBlocked(true);
+        setMenuOpenId(false)
+      } else if (result?.payload?.message === "User unblocked successfully") {
+        toast.success(result?.payload?.message);
+        setIsBlocked(false);
+        setMenuOpenId(false)
+      } else {
+        toast.error(result?.payload?.message || "Something went wrong");
+      }
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       <ChatSidebar />
@@ -191,7 +215,7 @@ const ChatMessages = () => {
         ) : (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b flex items-center gap-2  w-full h-11 rounded-lg border px-4 text-sm
+            <div className="p-4 border-b flex items-center gap-2  w-full h-11 rounded-lg border px-4 py-8 text-sm
                bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400
                focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
                dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder-gray-400
@@ -223,6 +247,28 @@ const ChatMessages = () => {
                   )}
                 </p>
               </div>
+              <span onClick={(e) => { e.preventDefault(); setMenuOpenId(!menuOpenId) }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="4" height="20" viewBox="0 0 4 20" fill="none">
+                  <path d="M2 4C3.10457 4 4 3.10457 4 2C4 0.895431 3.10457 0 2 0C0.895431 0 0 0.895431 0 2C0 3.10457 0.895431 4 2 4Z" fill="#464B70" />
+                  <path d="M2 11.9999C3.10457 11.9999 4 11.1044 4 9.99988C4 8.89531 3.10457 7.99988 2 7.99988C0.895431 7.99988 0 8.89531 0 9.99988C0 11.1044 0.895431 11.9999 2 11.9999Z" fill="#464B70" />
+                  <path d="M2 19.9998C3.10457 19.9998 4 19.1043 4 17.9998C4 16.8952 3.10457 15.9998 2 15.9998C0.895431 15.9998 0 16.8952 0 17.9998C0 19.1043 0.895431 19.9998 2 19.9998Z" fill="#464B70" />
+                </svg>
+              </span>
+              {menuOpenId && (
+                <div className="absolute right-38 bg-white border shadow-md rounded-md w-28 z-50">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleBlock(selectedUser._id);
+                    }}
+                    className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
+                  >
+                    {isBlocked?"Unblock":"Block"} 
+                  </button>
+
+                </div>
+              )}
             </div>
 
             {/* Messages */}
@@ -254,19 +300,19 @@ const ChatMessages = () => {
                               <>
                                 {/* Image */}
                                 <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer">
-                                {msg.attachment.type?.startsWith("image/") && (
-                                  <img
-                                    src={msg.attachment.url}
-                                     alt={msg.attachment.name}
-                                    className="w-full h-30 object-cover rounded-md mb-1"
-                                  />
-                                )}
+                                  {msg.attachment.type?.startsWith("image/") && (
+                                    <img
+                                      src={msg.attachment.url}
+                                      alt={msg.attachment.name}
+                                      className="w-full h-30 object-cover rounded-md mb-1"
+                                    />
+                                  )}
                                 </a>
 
                                 {/* Video */}
                                 {msg.attachment.type?.startsWith("video/") && (
                                   <video
-                                      src={msg.attachment.url}
+                                    src={msg.attachment.url}
                                     //  alt={msg.attachment.name}
                                     controls
                                     className="w-full h-30 rounded-md mb-1"
@@ -281,7 +327,7 @@ const ChatMessages = () => {
                                     className="flex items-center gap-1 text-blue-600 underline mb-1"
                                   >
                                     {/* 📄 {attachment?.name} */}
-                                   📄 {msg.attachment.type}
+                                    📄 {msg.attachment.type}
                                   </a>
                                 )}
 
@@ -299,11 +345,23 @@ const ChatMessages = () => {
                                   )}
                               </>
                             )}
-
-                            <span className="text-xs text-gray-500 block mt-1 text-right">
+                            <span className="text-xs text-gray-500 block mt-1 text-right flex items-center justify-end gap-1">
                               {msg.created_time}
-                            </span>
 
+                              {msg.sender_id === currentUserId && (
+                                <span className="ml-1 flex items-center">
+                                  {msg.is_read === false ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
+                                      <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#5c5c5c" />
+                                    </svg>
+                                  ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
+                                      <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#3F53FE" />
+                                    </svg>
+                                  )}
+                                </span>
+                              )}
+                            </span>
                           </div>
                         </div>
                       );
@@ -387,6 +445,7 @@ const ChatMessages = () => {
                 </div>
               )}
               <button
+                type="button"
                 onClick={handleSend}
                 className="p-2 bg-blue-500 text-white rounded-full px-4"
               >
