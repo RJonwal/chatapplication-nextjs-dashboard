@@ -1,5 +1,5 @@
 import express from "express";
-import { checkAuth, login, logout, removeProfile, signup, socialLogin, updateProfile, viewProfile} from "../controllers/auth.controller.js";
+import { blockUser, checkAuth, login, logout, removeProfile, signup, socialLogin, updateProfile, viewProfile} from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/profile.js";
 
@@ -13,4 +13,5 @@ router.put("/update-profile", protectRoute,upload.single("image"), updateProfile
 router.get("/view-profile", protectRoute, viewProfile)
 router.delete("/remove-profile", protectRoute, removeProfile);
 router.post("/social-login", socialLogin);
+router.put("/block/:userId", protectRoute, blockUser);
 export default router
