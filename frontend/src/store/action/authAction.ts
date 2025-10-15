@@ -117,3 +117,19 @@ export async function removeProfileAction():Promise<any>{
     return { success: false, message: error.message || "Something went wrong" };
     }
   }
+
+export async function blockUserAction(userId:any) {
+  try {
+    const res = await axiosInstance.put(
+      `${hostName}auth/block/${userId}`,{},
+      {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    return res.data;
+  } catch (error: any) {
+    if (error.response && error.response.data) return error.response.data;
+    return { success: false, message: error.message || "Something went wrong" };
+  }
+}
