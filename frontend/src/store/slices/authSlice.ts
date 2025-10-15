@@ -1,6 +1,6 @@
 "use client";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { googlelogin, loginUser, logout, registerAction, removeProfileAction, updateProfileAction, viewProfileAction } from "../action/authAction";
+import { blockUserAction, googlelogin, loginUser, logout, registerAction, removeProfileAction, updateProfileAction, viewProfileAction } from "../action/authAction";
 import { setCookies } from "@/utils/commons";
 
 const initialState: AuthState = {
@@ -105,6 +105,20 @@ void,
 >("auth/remove-user",async(_,{rejectWithValue})=>{
       try {
     const response = await removeProfileAction();
+       return response    
+  } catch (error) {
+    console.log(error);
+  }
+})
+
+
+export const blockUserThunk = createAsyncThunk<
+AuthResponse,
+any,
+{rejectValue:AuthResponse}
+>("auth/block-user",async(userId:any,{rejectWithValue})=>{
+      try {
+    const response = await blockUserAction(userId);
        return response    
   } catch (error) {
     console.log(error);
@@ -236,6 +250,21 @@ const authSlice = createSlice({
             state.message = action.payload.message;
         })
         builder.addCase(removeProfile.rejected, (state, action) => {
+            state.isLoading = false
+            state.error = action.payload;
+        })
+          builder.addCase(blockUserThunk.pending, (state) => {
+            state.isLoading = true;
+            state.error = null;
+            state.success = false;
+        })
+        builder.addCase(blockUserThunk.fulfilled, (state, action) => {   
+            state.isLoading = false;
+            state.success = true;
+            state.user = action.payload;
+            state.message = action.payload.message;
+        })
+        builder.addCase(blockUserThunk.rejected, (state, action) => {
             state.isLoading = false
             state.error = action.payload;
         })

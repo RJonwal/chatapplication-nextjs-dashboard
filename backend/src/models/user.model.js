@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
         password:{
             type:String,
         },
+        blockedUsers: [{ type: mongoose.Schema.Types.ObjectId}],
           image:{
             type:String,
         },
