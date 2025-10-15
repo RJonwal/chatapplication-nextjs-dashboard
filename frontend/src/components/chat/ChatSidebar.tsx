@@ -2,7 +2,7 @@
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAuthToken, setUser, viewProfile } from "@/store/slices/authSlice";
-import { chatSidebarThunk, clearUnread, markMessagesAsReadThunk, setSelectedUser } from "@/store/slices/messageSlice";
+import { chatSidebarThunk, clearUnread, fetchChatHistoryThunk, markMessagesAsReadThunk, setSelectedUser } from "@/store/slices/messageSlice";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 
@@ -16,7 +16,6 @@ const ChatSidebar = () => {
   const { token } = useAppSelector((state) => state.auth);
   const [searchTerm, setSearchTerm] = useState<string>("");
   console.log(users, "usersssss");
-
 
   useEffect(() => {
     dispatch(chatSidebarThunk());
@@ -83,7 +82,6 @@ const ChatSidebar = () => {
     );
   }, [users, searchTerm]);
 
-
   const handleUserClick = (user: any) => {
     dispatch(setSelectedUser(user));
     dispatch(markMessagesAsReadThunk(user._id));
@@ -111,10 +109,10 @@ const ChatSidebar = () => {
 
       <div className="overflow-y-auto flex-1">
         {filteredUsers.map((user) => {
-          const unread = user._id === selectedUser?._id ? 0 : unreadCounts[user._id] || 0;
-          console.log(unread,"unread");
-          
-
+          // console.log(user,"user11111");
+          // const unread = user._id === selectedUser?._id ? 0 : unreadCounts[user._id] || 0;
+          const unread = user._id === selectedUser?._id? 0 : unreadCounts[user._id] !== undefined? unreadCounts[user._id]: user.unreadCount || 0;
+          // console.log(unread,"unread");
           return (
             <div
               key={user._id}

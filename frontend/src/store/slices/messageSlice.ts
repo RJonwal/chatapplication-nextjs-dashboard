@@ -98,14 +98,23 @@ const chatSlice = createSlice({
       });
       state.unreadCounts = map;
     },
+    // clearUnread: (state, action) => {
+    //   state.unreadCounts[action.payload] = 0;
+    // },
     clearUnread: (state, action) => {
-      state.unreadCounts[action.payload] = 0;
-    },
+     const userId = action.payload;
+     state.unreadCounts[userId] = 0;
+
+     const userIndex = state.users.findIndex((u:any) => u._id === userId);
+      if (userIndex !== -1) {
+       state.users[userIndex].unreadCount = 0;
+      }
+     },
     incrementUnread: (state, action) => {
-  const userId = action.payload;
-  state.unreadCounts[userId] = (state.unreadCounts[userId] || 0) + 1;
-},
-  moveUserToTop: (state, action) => {
+     const userId = action.payload;
+     state.unreadCounts[userId] = (state.unreadCounts[userId] || 0) + 1;
+     },
+    moveUserToTop: (state, action) => {
     console.log(action,"action111");
     
     const userId = action.payload;
@@ -134,7 +143,6 @@ const chatSlice = createSlice({
     })
     builder.addCase(chatSidebarThunk.rejected, (state, action) => {
       state.isLoading = true
-      // state.error = action.payload;
     })
     builder.addCase(sendMessageThunk.pending, (state) => {
       state.isLoading = true,

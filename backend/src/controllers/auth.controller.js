@@ -264,3 +264,42 @@ export const socialLogin = async (req, res) => {
     });
   }
 };
+
+export const blockUser = async (req, res) => {
+  try {
+    const myId = req.user._id;
+    const { userId } = req.params;
+
+    console.log(userId, "target userId");
+
+    if (myId.toString() === userId) {
+      return res.status(400).json({ error: "You cannot block yourself" });
+    }
+
+    const me = await User.findById(myId);
+    if (!me) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log(me, "me");
+
+    const alreadyBlocked = me.blockedUsers?.some(
+      (id) => id.toString() === userId
+    );
+    console.log(alreadyBlocked, "alreadyBlocked");
+
+    let message;
+    if (alreadyBlocked) {
+      await User.findByIdAndUpdate(myId, { $pull: { blockedUsers: userId } });
+      message = "User unblocked successfully";
+    } else {
+      await User.findByIdAndUpdate(myId, { $addToSet: { blockedUsers: userId } });
+      message = "User blocked successfully";
+    }
+    console.log(message, "message");
+
+    res.status(200).json({ success: true, message });
+  } catch (error) {
+    console.error("Error in blockUser:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
