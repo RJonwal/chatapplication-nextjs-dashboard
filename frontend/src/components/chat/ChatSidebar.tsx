@@ -2,7 +2,7 @@
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAuthToken, setUser, viewProfile } from "@/store/slices/authSlice";
-import { chatSidebarThunk, clearUnread, fetchChatHistoryThunk, markMessagesAsReadThunk, setSelectedUser } from "@/store/slices/messageSlice";
+import { chatSidebarThunk, clearUnread, fetchChatHistoryThunk, fetchNotificationThunk, markMessagesAsReadThunk, setSelectedUser } from "@/store/slices/messageSlice";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 
@@ -15,7 +15,8 @@ const ChatSidebar = () => {
   const { users, unreadCounts, selectedUser, onlineUsers } = useAppSelector((state) => state.messages);
   const { token } = useAppSelector((state) => state.auth);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // console.log(users, "usersssss");
+  console.log(users, "usersssss");
+    const receivedNotificationUserId = localStorage.getItem("userId");
 
   useEffect(() => {
     dispatch(chatSidebarThunk());
@@ -86,6 +87,7 @@ const ChatSidebar = () => {
     dispatch(setSelectedUser(user));
     dispatch(markMessagesAsReadThunk(user._id));
     dispatch(clearUnread(user._id));
+    dispatch(fetchNotificationThunk(receivedNotificationUserId));
   };
 
   return (

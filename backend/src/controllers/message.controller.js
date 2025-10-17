@@ -3,6 +3,7 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 import admin from "../lib/firebase.js";
+import Notification from "../models/notifications.model.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -225,6 +226,22 @@ export const sendMessage = async (req, res) => {
       ]);
       io.to(receiverSocketId).emit("unreadCountsUpdate", unreadCount);
     }
+
+      const notification = new Notification({
+      senderId,
+      receiverId,
+      type: "message",
+      title: "New Message",
+      body: text.length > 50 ? text.substring(0, 50) + "..." : text,
+      data: {
+        messageId: newMessage._id.toString(),
+      },
+    });
+    await notification.save();
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newNotification", notification);
+    }
     // Send Firebase push notification
     try {
       // Get receiver from DB
@@ -240,6 +257,7 @@ export const sendMessage = async (req, res) => {
           },
           data: {
             senderId: senderId.toString(),
+            receiverId: receiverId.toString(),
             messageId: newMessage._id.toString(),
           },
         });
@@ -272,14 +290,45 @@ export const markMessagesAsRead = async (req, res) => {
       { $group: { _id: "$senderId", count: { $sum: 1 } } },
     ]);
 
+     await Notification.updateMany(
+      { senderId, receiverId: myId, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+     const notifications = await Notification.find({ receiverId: myId })
+      .sort({ createdAt: -1 })
+      .lean();
+
     const receiverSocketId = getReceiverSocketId(myId.toString());
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("unreadCountsUpdate", unreadCounts);
+      // io.to(receiverSocketId).emit("notificationsUpdate", updatedNotifications);
     }
 
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true ,notifications});
   } catch (error) {
     console.log("Error in markMessagesAsRead:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// GET /notifications
+export const getNotifications = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    // console.log("ReceiverId:", receiverId);
+
+    const notifications = await Notification.find({
+      receiverId: new mongoose.Types.ObjectId(receiverId),
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // console.log("Notifications:", notifications);
+
+    res.status(200).json(notifications);
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

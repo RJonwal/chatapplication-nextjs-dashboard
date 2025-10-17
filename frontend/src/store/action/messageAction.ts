@@ -68,3 +68,17 @@ export async function markMessagesAsReadApi(senderId: string) {
   }
 }
 
+
+export async function fetchNotificationAction(receiverId: string) {
+  try {
+    const res = await axiosInstance.get(`${hostName}messages/get-notifications/${receiverId}`, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" }
+    });
+    return res.data;
+    
+  } catch (error: any) {
+    if (error.response && error.response.data) return error.response.data;
+    return { success: false, message: error.message || "Something went wrong" };
+  }
+}

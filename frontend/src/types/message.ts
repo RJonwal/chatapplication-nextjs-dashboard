@@ -9,6 +9,7 @@ interface MessageState{
   onlineUsers: string[];
   selectedUser: User | null,
   unreadCounts: Record<string, number>;
+  notifications:[];
 }
 interface Message {
   _id?: string;
