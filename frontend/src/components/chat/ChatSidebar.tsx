@@ -87,7 +87,8 @@ const ChatSidebar = () => {
     dispatch(setSelectedUser(user));
     dispatch(markMessagesAsReadThunk(user._id));
     dispatch(clearUnread(user._id));
-    dispatch(fetchNotificationThunk(receivedNotificationUserId));
+    if(receivedNotificationUserId){ 
+      dispatch(fetchNotificationThunk(receivedNotificationUserId));}
   };
 
   return (

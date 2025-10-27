@@ -34,16 +34,16 @@ export default function NotificationDropdown() {
   };
 
   useEffect(() => {
-    dispatch(fetchNotificationThunk(receivedNotificationUserId));
+    if(receivedNotificationUserId){
+      dispatch(fetchNotificationThunk(receivedNotificationUserId));
+    }
   }, [dispatch]);
 
   useEffect(() => {
     if (notifications && Array.isArray(notifications)) {
       const unreadCount = notifications.filter((n: any) => !n.isRead).length;
       setNotificationCount(unreadCount);
-    } else if (notifications && !notifications.isRead) {
-      setNotificationCount(notifications.isRead ? 0 : 1);
-    } else {
+    }else {
       setNotificationCount(0);
     }
   }, [notifications]);
