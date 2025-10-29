@@ -9,7 +9,10 @@ const initialState: MessageState = {
   error: null,
   text: '',
   message: "",
-  messages: [],
+  // messages: [],
+    messages: {
+    messages: {}
+  },
   success: false,
   onlineUsers: [],
   selectedUser: null,

@@ -5,7 +5,12 @@ interface MessageState{
   text: string,
   success: boolean,
   message:any,
-  messages: Message[];
+  // messages: Message[];
+  messages: {
+    messages?: {
+      [dateLabel: string]: any[];
+    };
+  };
   onlineUsers: string[];
   selectedUser: User | null,
   unreadCounts: Record<string, number>;
