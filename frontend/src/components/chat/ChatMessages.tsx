@@ -339,7 +339,7 @@ const ChatMessages = () => {
                       const currentUserId = localStorage.getItem("userId")?.replace(/"/g, "");
                       const isMyMessage = msg.sender_id === currentUserId;
                       return (
-                        <div>
+                        <div key={msg.id}>
                           <span className="italic text-gray-800 text-[11px] flex justify-end">{msg.is_edited ? "edited" : null}</span>
                           <div
                             key={msg.id}
