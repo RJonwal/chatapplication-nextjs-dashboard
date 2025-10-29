@@ -371,11 +371,26 @@ export const editMessage = async (req, res) => {
     const { messageId } = req.params;
     const { text } = req.body;
     const userId = req.user._id;
+    const baseurl = process.env.BASE_URL;
+    
+    let attachment = null;
 
-    // Update message only if the logged-in user is the sender
+    if (req.file) {
+      attachment = {
+        url: `${baseurl}/uploads/${req.file.filename}`,
+        type: req.file.mimetype,
+        name: req.file.originalname,
+      };
+    }
+
+    const updateFields = { edited: true };
+    if (text !== undefined) updateFields.text = text;
+    if (attachment) updateFields.attachment = attachment;
+
+
     const updatedMessage = await Message.findOneAndUpdate(
       { _id: messageId, senderId: userId },
-      { $set: { text, edited: true } }, // optional 'edited' flag
+      { $set: updateFields },
       { new: true }
     );
 
@@ -383,13 +398,12 @@ export const editMessage = async (req, res) => {
       return res.status(404).json({ error: "Message not found or unauthorized" });
     }
 
-    // Emit real-time update to receiver if online
     const receiverSocketId = getReceiverSocketId(updatedMessage.receiverId.toString());
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("messageEdited", updatedMessage);
     }
 
-    res.status(200).json({ success: true, message: "Message updated successfully" });
+    res.status(200).json({ success: true, message: "Message updated successfully",updatedMessage, });
   } catch (error) {
     console.error("Error in editMessage:", error.message);
     res.status(500).json({ error: "Internal server error" });

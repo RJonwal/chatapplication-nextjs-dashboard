@@ -91,9 +91,9 @@ export const deleteMessageThunk = createAsyncThunk(
 
 export const editMessageThunk = createAsyncThunk(
   "chat/editmessage",
-  async ({ messageId, text }: { messageId: string; text: string }, { rejectWithValue }) => {
+  async ({ messageId,formData  }: { messageId: string; formData: FormData}, { rejectWithValue }) => {
     try {
-    const response=  await editMessage(messageId,text);
+    const response=  await editMessage(messageId,formData);
       return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "Failed to mark messages as read");

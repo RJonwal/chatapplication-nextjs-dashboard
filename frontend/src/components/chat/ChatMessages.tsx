@@ -13,7 +13,7 @@ const ChatMessages = () => {
   const hostName = process.env.NEXT_PUBLIC_IMAGE_URL!
   const { profile, user } = useAppSelector((state) => state.auth);
   const { selectedUser, messages, onlineUsers } = useAppSelector((state) => state.messages);
-  // console.log(messages, "messagesssss");
+  console.log(messages, "messagesssss");
 
   const [message, setMessage] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
@@ -25,6 +25,7 @@ const ChatMessages = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingMessage, setEditingMessage] = useState<any>(null);
   const [editText, setEditText] = useState("");
+  const [editAttachment, setEditAttachment] = useState<File | null>(null);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -197,7 +198,7 @@ const ChatMessages = () => {
     }
   }
 
-   const handleDelete = async (messageId: string) => {
+  const handleDelete = async (messageId: string) => {
     try {
       const result = await dispatch(deleteMessageThunk(messageId))
       if (selectedUser) {
@@ -210,32 +211,34 @@ const ChatMessages = () => {
     }
   }
 
-    const handleEditClick = (msg: any) => {
+  const handleEditClick = (msg: any) => {
     setEditingMessage(msg);
     setEditText(msg.content);
     setIsEditModalOpen(true);
     setMenuOpenId(false);
   };
 
-    const handleCancelEdit = () => {
+  const handleCancelEdit = () => {
     setIsEditModalOpen(false);
     setEditingMessage(null);
     setEditText("");
   };
 
-    const handleEditSubmit = async () => {
-    if (!editText.trim() || !editingMessage) return;
-
+  const handleEditSubmit = async () => {
+    if (!editingMessage) return;
+    const formData = new FormData();
+    formData.append("text", editText);
+    if (editAttachment) formData.append("attachment", editAttachment);
     try {
-      const result = await dispatch(editMessageThunk({ 
-        messageId: editingMessage.id, 
-        text: editText 
+      const result = await dispatch(editMessageThunk({
+        messageId: editingMessage.id,
+        formData
       }));
       if (selectedUser) {
         dispatch(fetchChatHistoryThunk(selectedUser._id));
       }
-     toast.success(result.payload.message)
-     setIsEditModalOpen(false);
+      toast.success(result.payload.message)
+      setIsEditModalOpen(false);
     } catch (err: any) {
       toast.error(err?.message);
     }
@@ -311,7 +314,7 @@ const ChatMessages = () => {
                     }}
                     className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
                   >
-                    {isBlocked?"Unblock":"Block"} 
+                    {isBlocked ? "Unblock" : "Block"}
                   </button>
 
                 </div>
@@ -337,109 +340,109 @@ const ChatMessages = () => {
                       const isMyMessage = msg.sender_id === currentUserId;
                       return (
                         <div>
-                        <span className="italic text-gray-800 text-[11px] flex justify-end">{msg.is_edited ?"edited":null}</span>
-                        <div
-                          key={msg.id}
-                          className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-2`}
-                        >
-                          <div className="relative group bg-blue-100 p-3 rounded-lg max-w-sm dark:bg-gray-900 border border-gray-300">
-                            <p>{msg.content}</p>
-                            {/* Attachment preview */}
-                            {msg.attachment && (
-                              <>
-                                {/* Image */}
-                                <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer">
-                                  {msg.attachment.type?.startsWith("image/") && (
-                                    <img
+                          <span className="italic text-gray-800 text-[11px] flex justify-end">{msg.is_edited ? "edited" : null}</span>
+                          <div
+                            key={msg.id}
+                            className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-2`}
+                          >
+                            <div className="relative group bg-blue-100 p-3 rounded-lg max-w-sm dark:bg-gray-900 border border-gray-300">
+                              <p>{msg.content}</p>
+                              {/* Attachment preview */}
+                              {msg.attachment && (
+                                <>
+                                  {/* Image */}
+                                  <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer">
+                                    {msg.attachment.type?.startsWith("image/") && (
+                                      <img
+                                        src={msg.attachment.url}
+                                        alt={msg.attachment.name}
+                                        className="w-full h-30 object-cover rounded-md mb-1"
+                                      />
+                                    )}
+                                  </a>
+
+                                  {/* Video */}
+                                  {msg.attachment.type?.startsWith("video/") && (
+                                    <video
                                       src={msg.attachment.url}
-                                      alt={msg.attachment.name}
-                                      className="w-full h-30 object-cover rounded-md mb-1"
+                                      //  alt={msg.attachment.name}
+                                      controls
+                                      className="w-full h-30 rounded-md mb-1"
                                     />
                                   )}
-                                </a>
 
-                                {/* Video */}
-                                {msg.attachment.type?.startsWith("video/") && (
-                                  <video
-                                    src={msg.attachment.url}
-                                    //  alt={msg.attachment.name}
-                                    controls
-                                    className="w-full h-30 rounded-md mb-1"
-                                  />
-                                )}
-
-                                {/* PDF */}
-                                {msg.attachment.type?.startsWith("application/pdf") && (
-                                  <a
-                                    href={msg.attachment.url}
-                                    target="_blank"
-                                    className="flex items-center gap-1 text-blue-600 underline mb-1"
-                                  >
-                                    {/* 📄 {attachment?.name} */}
-                                    📄 {msg.attachment.type}
-                                  </a>
-                                )}
-
-                                {/* Other files */}
-                                {!msg.attachment.type?.startsWith("image/") &&
-                                  !msg.attachment.type?.startsWith("video/") &&
-                                  msg.attachment.type !== "application/pdf" && (
+                                  {/* PDF */}
+                                  {msg.attachment.type?.startsWith("application/pdf") && (
                                     <a
                                       href={msg.attachment.url}
                                       target="_blank"
                                       className="flex items-center gap-1 text-blue-600 underline mb-1"
                                     >
-                                      📎 {"file.pdf"}
+                                      {/* 📄 {attachment?.name} */}
+                                      📄 {msg.attachment.type}
                                     </a>
                                   )}
-                              </>
-                            )}
-                            <span className="text-xs text-gray-500 block mt-1 text-right flex items-center justify-end gap-1">
-                              {msg.created_time}
-                              {isMyMessage && (
-                              <button
-                                onClick={() =>
-                                  setMenuOpenId(menuOpenId === msg.id ? null : msg.id)
-                                }
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                              >
-                                ⋮
-                              </button>
-                            )}
 
-                            {menuOpenId === msg.id && (
-                              <div className="absolute right-0 top-8 bg-white border shadow-md rounded-md w-28 z-50">
-                                <button className="block w-full text-left px-3 py-2 hover:bg-gray-100"
-                                onClick={() => handleEditClick(msg)}
-                                >
-                                  ✏️ Edit
-                                </button>
-                                <button
-                                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
-                                  onClick={() => handleDelete(msg.id)}
-                                >
-                                  🗑 Delete
-                                </button>
-                              </div>
-                            )}
-
-                              {msg.sender_id === currentUserId && (
-                                <span className="ml-1 flex items-center">
-                                  {msg.is_read === false ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
-                                      <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#5c5c5c" />
-                                    </svg>
-                                  ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
-                                      <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#3F53FE" />
-                                    </svg>
-                                  )}
-                                </span>
+                                  {/* Other files */}
+                                  {!msg.attachment.type?.startsWith("image/") &&
+                                    !msg.attachment.type?.startsWith("video/") &&
+                                    msg.attachment.type !== "application/pdf" && (
+                                      <a
+                                        href={msg.attachment.url}
+                                        target="_blank"
+                                        className="flex items-center gap-1 text-blue-600 underline mb-1"
+                                      >
+                                        📎 {"file.pdf"}
+                                      </a>
+                                    )}
+                                </>
                               )}
-                            </span>
+                              <span className="text-xs text-gray-500 block mt-1 text-right flex items-center justify-end gap-1">
+                                {msg.created_time}
+                                {isMyMessage && (
+                                  <button
+                                    onClick={() =>
+                                      setMenuOpenId(menuOpenId === msg.id ? null : msg.id)
+                                    }
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                  >
+                                    ⋮
+                                  </button>
+                                )}
+
+                                {menuOpenId === msg.id && (
+                                  <div className="absolute right-0 top-8 bg-white border shadow-md rounded-md w-28 z-50">
+                                    <button className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                                      onClick={() => handleEditClick(msg)}
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                    <button
+                                      className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
+                                      onClick={() => handleDelete(msg.id)}
+                                    >
+                                      🗑 Delete
+                                    </button>
+                                  </div>
+                                )}
+
+                                {msg.sender_id === currentUserId && (
+                                  <span className="ml-1 flex items-center">
+                                    {msg.is_read === false ? (
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
+                                        <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#5c5c5c" />
+                                      </svg>
+                                    ) : (
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="27" height="15" viewBox="0 0 27 15" fill="none">
+                                        <path d="M13.0745 9.70926L14.8158 11.4712L25.2562 0.907162L27 2.67157L14.8158 15L6.96766 7.0589L8.71143 5.29448L11.332 7.94609L13.0745 9.70801V9.70926ZM13.077 6.18043L19.1839 0L20.9227 1.75942L14.8158 7.93986L13.077 6.18043ZM9.59071 13.2368L7.84818 15L0 7.0589L1.74377 5.29448L3.4863 7.05765L3.48506 7.0589L9.59071 13.2368Z" fill="#3F53FE" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                          </div>
                       );
                     })}
                   </div>
@@ -447,12 +450,10 @@ const ChatMessages = () => {
               })}
               <div ref={messagesEndRef} />
             </div>
-
             {isEditModalOpen && (
               <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-blue-100 rounded-lg p-6 w-96 max-w-full mx-4">
                   <h3 className="text-lg font-semibold mb-4">Edit Message</h3>
-                  
                   <textarea
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
@@ -461,7 +462,81 @@ const ChatMessages = () => {
                     placeholder="Edit your message..."
                     autoFocus
                   />
-                  
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium mb-2">Attachment</label>
+
+                    {!editAttachment  && editingMessage?.attachment && (
+                      <div className="mb-3 relative">
+                        {editingMessage.attachment.type?.startsWith("image/") && (
+                          <img
+                            src={editingMessage.attachment.url}
+                            alt={editingMessage.attachment.name}
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                        )}
+                        {editingMessage.attachment.type?.startsWith("video/") && (
+                          <video
+                            src={editingMessage.attachment.url}
+                            controls
+                            className="w-full h-32 rounded-md border"
+                          />
+                        )}
+                        {editingMessage.attachment.type?.startsWith("application/pdf") && (
+                          <a
+                            href={editingMessage.attachment.url}
+                            target="_blank"
+                            className="text-blue-600 underline"
+                          >
+                            📄 {editingMessage.attachment.name}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/*,video/*,application/pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setEditAttachment(file);
+                      }}
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                    />
+
+                    {editAttachment && (
+                      <div className="mt-3 relative">
+                        {editAttachment.type.startsWith("image/") && (
+                          <img
+                            src={URL.createObjectURL(editAttachment)}
+                            alt="Preview"
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                        )}
+                        {editAttachment.type.startsWith("video/") && (
+                          <video
+                            src={URL.createObjectURL(editAttachment)}
+                            controls
+                            className="w-full h-32 rounded-md border"
+                          />
+                        )}
+                        {editAttachment.type === "application/pdf" && (
+                          <p className="mt-1 text-sm text-gray-700">
+                            📄 {editAttachment.name}
+                          </p>
+                        )}
+
+                        <button
+                          onClick={() => setEditAttachment(null)}
+                          className="absolute top-1 right-1 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modal Actions */}
                   <div className="flex justify-end gap-3 mt-4">
                     <button
                       onClick={handleCancelEdit}
@@ -471,8 +546,7 @@ const ChatMessages = () => {
                     </button>
                     <button
                       onClick={handleEditSubmit}
-                      // disabled={!editText.trim()}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
                       Save Changes
                     </button>
@@ -480,7 +554,6 @@ const ChatMessages = () => {
                 </div>
               </div>
             )}
-
             <div className="p-4 border-t flex items-center gap-2 dark:bg-gray-900">
               <input
                 type="file"

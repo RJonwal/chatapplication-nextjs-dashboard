@@ -97,11 +97,11 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
-export async function editMessage(messageId: string,text: string) {
+export async function editMessage(messageId: string, formData: FormData) {
   try {
-    const res = await axiosInstance.put(`${hostName}messages/edit/${messageId}`,{text},{
+    const res = await axiosInstance.put(`${hostName}messages/edit/${messageId}`,formData,{
       withCredentials: true,
-      headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
     
