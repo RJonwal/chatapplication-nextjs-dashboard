@@ -132,6 +132,7 @@ export const getMessages = async (req, res) => {
         created_date: createdDate,
         created_time: createdTime,
         is_read: msg.isRead,
+        is_edited: msg.edited || false,
         date_time_label: dateLabel,
       });
     });
@@ -341,7 +342,7 @@ export const deleteMessage = async (req, res) => {
     // Update message instead of deleting
     const deletedMessage = await Message.findOneAndUpdate(
       { _id: messageId, senderId: userId },
-      { $set: { text: "This message has been deleted", deleted: true } },
+      { $set: { text: "This message has been deleted",attachment: null, deleted: true } },
       { new: true }
     );
 

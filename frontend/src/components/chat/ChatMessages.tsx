@@ -336,6 +336,8 @@ const ChatMessages = () => {
                       const currentUserId = localStorage.getItem("userId")?.replace(/"/g, "");
                       const isMyMessage = msg.sender_id === currentUserId;
                       return (
+                        <div>
+                        <span className="italic text-gray-800 text-[11px] flex justify-end">{msg.is_edited ?"edited":null}</span>
                         <div
                           key={msg.id}
                           className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-2`}
@@ -394,7 +396,6 @@ const ChatMessages = () => {
                             )}
                             <span className="text-xs text-gray-500 block mt-1 text-right flex items-center justify-end gap-1">
                               {msg.created_time}
-
                               {isMyMessage && (
                               <button
                                 onClick={() =>
@@ -438,6 +439,7 @@ const ChatMessages = () => {
                             </span>
                           </div>
                         </div>
+                          </div>
                       );
                     })}
                   </div>
