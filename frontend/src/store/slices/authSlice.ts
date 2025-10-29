@@ -126,6 +126,8 @@ any,
 })
 
 
+
+
 const authSlice = createSlice({
     name:"auth",
     initialState:updatedInitialState,
@@ -268,6 +270,7 @@ const authSlice = createSlice({
             state.isLoading = false
             state.error = action.payload;
         })
+   
     }
 })
 

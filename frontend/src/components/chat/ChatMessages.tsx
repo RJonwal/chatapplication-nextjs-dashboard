@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { connectSocket, getSocket, disconnectSocket } from "../../lib/socket";
-import { addMessage, clearUnread, fetchChatHistoryThunk, markMessagesAsReadThunk, moveUserToTop, sendMessageThunk, setOnlineUsers, setUnreadCounts } from "@/store/slices/messageSlice";
+import { addMessage, clearUnread, deleteMessageThunk, editMessageThunk, fetchChatHistoryThunk, markMessagesAsReadThunk, moveUserToTop, sendMessageThunk, setOnlineUsers, setUnreadCounts } from "@/store/slices/messageSlice";
 import ChatSidebar from "./ChatSidebar";
 import Image from "next/image";
 import { toast } from "react-toastify";
@@ -22,6 +22,9 @@ const ChatMessages = () => {
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<any>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -194,6 +197,50 @@ const ChatMessages = () => {
     }
   }
 
+   const handleDelete = async (messageId: string) => {
+    try {
+      const result = await dispatch(deleteMessageThunk(messageId))
+      if (selectedUser) {
+        dispatch(fetchChatHistoryThunk(selectedUser._id));
+      }
+      setMenuOpenId(false)
+      toast.success(result?.payload?.message)
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  }
+
+    const handleEditClick = (msg: any) => {
+    setEditingMessage(msg);
+    setEditText(msg.content);
+    setIsEditModalOpen(true);
+    setMenuOpenId(false);
+  };
+
+    const handleCancelEdit = () => {
+    setIsEditModalOpen(false);
+    setEditingMessage(null);
+    setEditText("");
+  };
+
+    const handleEditSubmit = async () => {
+    if (!editText.trim() || !editingMessage) return;
+
+    try {
+      const result = await dispatch(editMessageThunk({ 
+        messageId: editingMessage.id, 
+        text: editText 
+      }));
+      if (selectedUser) {
+        dispatch(fetchChatHistoryThunk(selectedUser._id));
+      }
+     toast.success(result.payload.message)
+     setIsEditModalOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <ChatSidebar />
@@ -348,6 +395,33 @@ const ChatMessages = () => {
                             <span className="text-xs text-gray-500 block mt-1 text-right flex items-center justify-end gap-1">
                               {msg.created_time}
 
+                              {isMyMessage && (
+                              <button
+                                onClick={() =>
+                                  setMenuOpenId(menuOpenId === msg.id ? null : msg.id)
+                                }
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                              >
+                                ⋮
+                              </button>
+                            )}
+
+                            {menuOpenId === msg.id && (
+                              <div className="absolute right-0 top-8 bg-white border shadow-md rounded-md w-28 z-50">
+                                <button className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                                onClick={() => handleEditClick(msg)}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
+                                  onClick={() => handleDelete(msg.id)}
+                                >
+                                  🗑 Delete
+                                </button>
+                              </div>
+                            )}
+
                               {msg.sender_id === currentUserId && (
                                 <span className="ml-1 flex items-center">
                                   {msg.is_read === false ? (
@@ -371,6 +445,39 @@ const ChatMessages = () => {
               })}
               <div ref={messagesEndRef} />
             </div>
+
+            {isEditModalOpen && (
+              <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-blue-100 rounded-lg p-6 w-96 max-w-full mx-4">
+                  <h3 className="text-lg font-semibold mb-4">Edit Message</h3>
+                  
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    placeholder="Edit your message..."
+                    autoFocus
+                  />
+                  
+                  <div className="flex justify-end gap-3 mt-4">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleEditSubmit}
+                      // disabled={!editText.trim()}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="p-4 border-t flex items-center gap-2 dark:bg-gray-900">
               <input

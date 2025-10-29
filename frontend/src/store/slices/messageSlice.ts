@@ -1,7 +1,7 @@
 "use client";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { registerAction } from "../action/authAction";
-import { chathistory, chatSidebar, fetchNotificationAction, markMessagesAsReadApi, sendChatMessage } from "../action/messageAction";
+import { chathistory, chatSidebar, deleteMessage, editMessage, fetchNotificationAction, markMessagesAsReadApi, sendChatMessage } from "../action/messageAction";
 
 const initialState: MessageState = {
   users: [],
@@ -72,6 +72,31 @@ export const fetchNotificationThunk = createAsyncThunk(
     }
   }
 )
+
+export const deleteMessageThunk = createAsyncThunk(
+  "chat/deletemessage",
+  async (messageId: string, { rejectWithValue }) => {
+    try {
+    const response = await deleteMessage(messageId);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Failed to mark messages as read");
+    }
+  }
+);
+
+
+export const editMessageThunk = createAsyncThunk(
+  "chat/editmessage",
+  async ({ messageId, text }: { messageId: string; text: string }, { rejectWithValue }) => {
+    try {
+    const response=  await editMessage(messageId,text);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Failed to mark messages as read");
+    }
+  }
+);
 
 const chatSlice = createSlice({
   name: "auth",
@@ -219,6 +244,32 @@ const chatSlice = createSlice({
     builder.addCase(fetchNotificationThunk.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
+    });
+         builder.addCase(deleteMessageThunk.pending, (state) => {
+             state.isLoading = true;
+             state.error = null;
+    });
+        builder.addCase(deleteMessageThunk.fulfilled, (state, action) => {
+             state.isLoading = false;
+             state.success = true;
+             // state.messages = action.payload;
+    });
+        builder.addCase(deleteMessageThunk.rejected, (state, action) => {
+             state.isLoading = false;
+             state.error = action.payload as string;
+    });
+        builder.addCase(editMessageThunk.pending, (state) => {
+             state.isLoading = true;
+             state.error = null;
+    });
+        builder.addCase(editMessageThunk.fulfilled, (state, action) => {
+             state.isLoading = false;
+             state.success = true;
+             // state.messages = action.payload;
+    });
+        builder.addCase(editMessageThunk.rejected, (state, action) => {
+             state.isLoading = false;
+             state.error = action.payload as string;
     });
   }
 })

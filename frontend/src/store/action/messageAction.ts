@@ -82,3 +82,31 @@ export async function fetchNotificationAction(receiverId: string) {
     return { success: false, message: error.message || "Something went wrong" };
   }
 }
+
+export async function deleteMessage(messageId: string) {
+  try {
+    const res = await axiosInstance.delete(`${hostName}messages/delete/${messageId}`, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" }
+    });
+    return res.data;
+    
+  } catch (error: any) {
+    if (error.response && error.response.data) return error.response.data;
+    return { success: false, message: error.message || "Something went wrong" };
+  }
+}
+
+export async function editMessage(messageId: string,text: string) {
+  try {
+    const res = await axiosInstance.put(`${hostName}messages/edit/${messageId}`,{text},{
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" }
+    });
+    return res.data;
+    
+  } catch (error: any) {
+    if (error.response && error.response.data) return error.response.data;
+    return { success: false, message: error.message || "Something went wrong" };
+  }
+}

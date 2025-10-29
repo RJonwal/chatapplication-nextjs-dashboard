@@ -332,3 +332,65 @@ export const getNotifications = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    // Update message instead of deleting
+    const deletedMessage = await Message.findOneAndUpdate(
+      { _id: messageId, senderId: userId },
+      { $set: { text: "This message has been deleted", deleted: true } },
+      { new: true }
+    );
+
+    if (!deletedMessage) {
+      return res.status(404).json({ error: "Message not found or unauthorized" });
+    }
+
+    // Emit real-time update to receiver if online
+    const receiverSocketId = getReceiverSocketId(deletedMessage.receiverId.toString());
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageDeleted", {
+        messageId: deletedMessage._id,
+        text: deletedMessage.text,
+      });
+    }
+
+    res.status(200).json({ success: true, message: "Message delete successfully" });
+  } catch (error) {
+    console.error("Error in deleteMessage:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const editMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { text } = req.body;
+    const userId = req.user._id;
+
+    // Update message only if the logged-in user is the sender
+    const updatedMessage = await Message.findOneAndUpdate(
+      { _id: messageId, senderId: userId },
+      { $set: { text, edited: true } }, // optional 'edited' flag
+      { new: true }
+    );
+
+    if (!updatedMessage) {
+      return res.status(404).json({ error: "Message not found or unauthorized" });
+    }
+
+    // Emit real-time update to receiver if online
+    const receiverSocketId = getReceiverSocketId(updatedMessage.receiverId.toString());
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageEdited", updatedMessage);
+    }
+
+    res.status(200).json({ success: true, message: "Message updated successfully" });
+  } catch (error) {
+    console.error("Error in editMessage:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
