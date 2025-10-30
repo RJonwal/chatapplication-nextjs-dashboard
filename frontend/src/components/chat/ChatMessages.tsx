@@ -13,7 +13,7 @@ const ChatMessages = () => {
   const hostName = process.env.NEXT_PUBLIC_IMAGE_URL!
   const { profile, user } = useAppSelector((state) => state.auth);
   const { selectedUser, messages, onlineUsers } = useAppSelector((state) => state.messages);
-  console.log(messages, "messagesssss");
+  // console.log(messages, "messagesssss");
 
   const [message, setMessage] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
@@ -340,7 +340,7 @@ const ChatMessages = () => {
                       const isMyMessage = msg.sender_id === currentUserId;
                       return (
                         <div key={msg.id}>
-                          <span className="italic text-gray-800 text-[11px] flex justify-end">{msg.is_edited ? "edited" : null}</span>
+                          <span className="italic text-gray-800 text-[11px] flex justify-end">{(msg.is_edited && isMyMessage) ? "edited" : null}</span>
                           <div
                             key={msg.id}
                             className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-2`}
